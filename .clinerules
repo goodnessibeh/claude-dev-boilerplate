@@ -13,9 +13,16 @@
 - **Security first**: Auth + authorization + validation + rate limiting on every endpoint.
 - **No hardcoded secrets**: All secrets from environment variables.
 - **No AI references in commits**: Never mention any AI tool name in commit messages.
-- **Mobile-first CSS**: Write mobile styles first, then add responsive breakpoints.
-- **Dark mode**: Every component must work in both light and dark themes.
 - **Contract-first**: Read `docs/contracts/{module}.contract.ts` before implementing any endpoint.
+
+## Frontend Rules (Non-Negotiable)
+
+- **Zero raw HTML in pages**: Never write raw `<div>`, `<h1>`, `<p>` directly in page files. Every visible element must be a named, reusable component.
+- **Component-based always**: Build and reuse components from `components/shared/`. Check if one exists before creating a new one. Extend before recreating.
+- **Mobile-responsive mandatory**: Every page and component must work from 320px to 2560px. Design mobile-first, then enhance for larger screens. Test at 320px, 768px, 1024px, 1440px.
+- **Consistent branding**: All colors, spacing, border-radius, shadows, and fonts must come from design tokens (CSS variables / theme constants). Never hardcode visual values.
+- **Dark mode**: Every component must work in both light and dark themes.
+- **Page files only compose components**: Pages should read like a blueprint — `<PageShell>`, `<CardGrid>`, `<StatCard>` — not raw HTML structures.
 
 ## Files to Read Before Implementation
 
@@ -28,8 +35,8 @@
 ## Architecture
 
 - **Backend**: Directory-based modules (models/, serializers/, views/, services/, tests/ per app)
-- **Frontend**: Feature-based organization (features/{name}/components, hooks, services, types)
-- **Mobile**: Feature-based with StyleSheet companion files (*.styles.ts)
+- **Frontend**: Feature-based organization (features/{name}/components, hooks, services, types). Shared components in `components/shared/`. Design tokens in `globals.css`.
+- **Mobile**: Feature-based with StyleSheet companion files (*.styles.ts). Brand theme in `components/brand/theme.ts`.
 - **Naming**: snake_case fields, PascalCase components, kebab-case URLs
 
 ## Testing

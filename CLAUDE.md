@@ -393,9 +393,165 @@ frontend/
 
 ## UI Standards
 
+### Core Principles
+
+> **Every UI is built from reusable components. Every page is mobile-responsive. Every element follows the brand.**
+
+1. **Component-based architecture** — never write raw HTML/JSX markup directly in pages. Every UI element is a named, reusable component.
+2. **Mobile-responsive by default** — every page and component must work flawlessly from 320px to 2560px. Mobile is designed first, then progressively enhanced.
+3. **Consistent branding** — colors, typography, spacing, border radius, shadows, and iconography come from a single design system. No ad-hoc values.
+4. **Reuse over recreation** — before building a new component, check if one already exists in `components/shared/` or `components/ui/`. Extend existing components before creating new ones.
+
+### Zero Raw HTML Rule
+
+**Never write raw HTML tags or unstructured JSX blobs directly in page files.** Every visible element must be a named component.
+
+```tsx
+// NEVER — raw HTML dump in a page
+export default function DashboardPage() {
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 16 }}>
+        <div className="card">
+          <h3>Users</h3>
+          <p>1,234</p>
+        </div>
+        <div className="card">
+          <h3>Revenue</h3>
+          <p>$12,345</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// CORRECT — component-based composition
+import { PageShell } from "@/components/layout/PageShell";
+import { StatCard } from "@/components/shared/StatCard";
+import { CardGrid } from "@/components/shared/CardGrid";
+
+export default function DashboardPage() {
+  return (
+    <PageShell title="Dashboard">
+      <CardGrid>
+        <StatCard label="Users" value="1,234" icon="users" />
+        <StatCard label="Revenue" value="$12,345" icon="dollar" trend="+12%" />
+      </CardGrid>
+    </PageShell>
+  );
+}
+```
+
+**Rules:**
+1. **Page files (`page.tsx`)** should ONLY compose components — no raw `<div>`, `<section>`, `<h1>`, `<p>`, `<span>`, `<img>` tags directly. Wrap them in named components.
+2. **If you use any HTML element more than once**, it MUST become a shared component (`components/shared/`).
+3. **If you use a pattern across features** (cards, lists, filters, empty states, loading states), it MUST be in `components/shared/`.
+4. **Maximum 3 lines of raw JSX in a page** — anything more must be extracted into a component.
+
+### Reusable Component Library
+
+Every project must build and maintain a shared component library. These components are the building blocks for all pages.
+
+```
+components/
+├── ui/                          # Primitive UI components (shadcn/ui or custom)
+│   ├── button.tsx               # Button with size/variant props
+│   ├── input.tsx                # Form input with label, error, helper text
+│   ├── badge.tsx                # Status badges
+│   ├── card.tsx                 # Card container
+│   ├── dialog.tsx               # Modal dialog
+│   ├── select.tsx               # Dropdown select
+│   └── ...                      # Other primitives
+├── shared/                      # Reusable composed components
+│   ├── PageShell.tsx            # Standard page wrapper (title, breadcrumbs, actions)
+│   ├── DataTable.tsx            # Sortable, filterable table with pagination
+│   ├── StatCard.tsx             # Metric card (label, value, icon, trend)
+│   ├── CardGrid.tsx             # Responsive grid of cards
+│   ├── EmptyState.tsx           # Empty state with icon, message, action
+│   ├── LoadingSpinner.tsx       # Loading indicator
+│   ├── ErrorBoundary.tsx        # Error boundary with fallback UI
+│   ├── SearchInput.tsx          # Search with debounce
+│   ├── FilterBar.tsx            # Horizontal filter pills/dropdowns
+│   ├── StatusBadge.tsx          # Color-coded status indicator
+│   ├── Avatar.tsx               # User avatar with fallback initials
+│   ├── ConfirmDialog.tsx        # Confirmation modal (delete, destructive actions)
+│   ├── FormField.tsx            # Form field wrapper (label + input + error)
+│   └── Pagination.tsx           # Page/cursor navigation
+├── layout/                      # Page structure components
+│   ├── Header.tsx               # App header (logo, search, user menu)
+│   ├── Sidebar.tsx              # Navigation sidebar (desktop)
+│   ├── MobileNav.tsx            # Bottom tab bar (mobile)
+│   ├── Footer.tsx               # App footer
+│   └── ThemeToggle.tsx          # Light/dark mode toggle
+└── brand/                       # Brand-specific components
+    ├── Logo.tsx                  # Logo (SVG, responsive sizes)
+    ├── BrandColors.ts           # Exported brand color constants
+    └── Typography.tsx           # Heading, Body, Caption components with brand fonts
+```
+
+**Before creating any new component, ask:**
+1. Does a similar component already exist in `components/shared/` or `components/ui/`?
+2. Can I extend an existing component with a new prop/variant instead?
+3. Will this be used more than once? If yes → `components/shared/`. If once → feature-level component.
+
+### Consistent Branding & Design Tokens
+
+**All visual properties must come from a centralized design system — never use hardcoded values.**
+
+```css
+/* globals.css — Define ALL design tokens here */
+:root {
+  /* Brand Colors */
+  --brand-primary: #0067FF;        /* Main brand color */
+  --brand-primary-hover: #0052CC;
+  --brand-secondary: #6C757D;
+  --brand-accent: #FF6B2B;
+
+  /* Semantic Colors (from shadcn or custom) */
+  --background: ...;
+  --foreground: ...;
+  --muted: ...;
+  --muted-foreground: ...;
+  --border: ...;
+  --ring: ...;
+
+  /* Spacing Scale */
+  --space-xs: 0.25rem;    /* 4px */
+  --space-sm: 0.5rem;     /* 8px */
+  --space-md: 1rem;       /* 16px */
+  --space-lg: 1.5rem;     /* 24px */
+  --space-xl: 2rem;       /* 32px */
+  --space-2xl: 3rem;      /* 48px */
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;  /* 6px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+}
+```
+
+**Rules:**
+1. **Never hardcode colors** — use `var(--brand-primary)`, `var(--muted-foreground)`, etc.
+2. **Never hardcode spacing** — use the spacing scale (`var(--space-md)`) or consistent rem values.
+3. **Never hardcode border-radius** — use `var(--radius-md)` etc.
+4. **Never hardcode font families** — use `var(--font-sans)`.
+5. **Never hardcode shadows** — use `var(--shadow-sm)`, `var(--shadow-md)`, `var(--shadow-lg)`.
+6. **All design token changes happen in ONE place** (`globals.css` or theme config) and propagate everywhere.
+7. **Dark mode** must use the same token names — the values change, the names don't.
+
 ### Design Reference UI Kits
 
-> **MANDATORY:** Before designing ANY new page or component, consult the reference UI kits for the equivalent design pattern. Match their spacing, border radius, shadows, typography, and color usage.
+> Before designing ANY new page or component, consult the reference UI kits for the equivalent design pattern. Match their spacing, border radius, shadows, typography, and color usage.
 
 | Kit | Path | Use For |
 |-----|------|---------|
@@ -403,13 +559,66 @@ frontend/
 | **[Mobile UI Kit]** | `/path/to/mobile-ui-kit/` | Mobile: screens, cards, lists, navigation |
 | **Branding** | `https://your-brand-site.com` | Brand colors, visual identity |
 
-### Mobile-First Design Philosophy
+### Mobile-Responsive Design (Mandatory)
 
-> **This app is mobile-first.** The web experience must look and behave like a mobile app first, then progressively enhance for larger screens.
+> **Every page, every component, every layout must be fully responsive from 320px to 2560px.** There are no "desktop-only" components.
+
+#### Responsive Breakpoints
+
+Design and code mobile-first — default styles are for the smallest screen, then enhance upward:
+
+| Breakpoint | Target | CSS |
+|-----------|--------|-----|
+| Default | Mobile (320px+) | Base styles — no media query needed |
+| `640px` | Tablet portrait | `@media (min-width: 640px)` |
+| `768px` | Tablet landscape | `@media (min-width: 768px)` |
+| `1024px` | Desktop | `@media (min-width: 1024px)` |
+| `1280px` | Wide desktop | `@media (min-width: 1280px)` |
+
+#### Responsive Component Patterns
+
+```css
+/* components/shared/CardGrid.module.css */
+.grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: 1fr;          /* Mobile: single column */
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);  /* Tablet: 2 columns */
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);  /* Desktop: 3 columns */
+    gap: var(--space-lg);
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);  /* Wide: 4 columns */
+  }
+}
+```
+
+**Responsive rules:**
+1. **Every grid/layout component** must define behavior at all breakpoints.
+2. **Navigation** — mobile uses bottom tab bar, desktop uses sidebar. Both must be components (`MobileNav.tsx`, `Sidebar.tsx`), toggled by viewport.
+3. **Tables** — must collapse to card layout on mobile. Use `DataTable` component with built-in responsive mode.
+4. **Forms** — single column on mobile, multi-column on desktop. Fields stack vertically at small widths.
+5. **Modals/dialogs** — full-screen sheet on mobile, centered dialog on desktop.
+6. **Images** — responsive with `sizes` attribute, lazy-loaded, aspect-ratio preserved.
+7. **Touch targets** — minimum 44px on all interactive elements (buttons, links, form controls).
+8. **Test at 320px, 768px, 1024px, 1440px** before marking any UI task complete.
 
 ### Web (Next.js + shadcn/ui)
+
 - **Component library:** shadcn/ui — all UI primitives from shadcn
-- **Component-based architecture:** Every UI element is a reusable component. No page-level inline markup blobs.
+- **Every page is a composition of components** — no raw markup in page files
 
 #### CSS Rules — No Inline Styles
 
@@ -418,7 +627,7 @@ frontend/
 | Approach | When to Use |
 |----------|------------|
 | **CSS Modules** (`*.module.css`) | Custom component styles, layouts, page-specific styles |
-| **`globals.css`** | shadcn CSS variables, base resets, app-wide utility classes |
+| **`globals.css`** | Design tokens, shadcn CSS variables, base resets |
 | **shadcn `cn()` helper** | Only for shadcn's own components (button variants, etc.) — keep it minimal |
 | **Standard CSS** | Inside CSS Module files — write plain CSS properties, NOT `@apply` |
 
@@ -450,28 +659,31 @@ frontend/
   display: flex;
   height: 3.5rem;
   align-items: center;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: var(--space-md);
+  padding-right: var(--space-md);
 }
 
 @media (min-width: 768px) {
   .header__inner {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+    padding-left: var(--space-lg);
+    padding-right: var(--space-lg);
   }
 }
 ```
 ```tsx
 // components/layout/Header.tsx
 import styles from "./Header.module.css";
+import { Logo } from "@/components/brand/Logo";
+import { SearchInput } from "@/components/shared/SearchInput";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.header__inner}>
-        <Link href="/" className={styles.header__logo}>...</Link>
-        <div className={styles.header__search}>...</div>
-        <div className={styles.header__actions}>...</div>
+        <Logo size="sm" />
+        <SearchInput className={styles.header__search} />
+        <ThemeToggle />
       </div>
     </header>
   );
@@ -483,41 +695,40 @@ export function Header() {
 /* NEVER — @apply in CSS Modules (breaks Tailwind v4 build) */
 .header {
   @apply sticky top-0 z-50 w-full border-b;
-  @apply bg-background/95 backdrop-blur;
 }
 ```
 ```tsx
 // NEVER — long inline Tailwind strings
-<div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+<div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
 
 // NEVER — inline style objects
 <div style={{ padding: "16px", display: "flex" }}>
+
+// NEVER — raw HTML in page files
+<div><h1>Dashboard</h1><p>Welcome back</p></div>
 ```
 
-**Exception:** shadcn/ui auto-generated components in `components/ui/` may use `cn()` with Tailwind — do not edit these files. They are managed by the shadcn CLI.
+**Exception:** shadcn/ui auto-generated components in `components/ui/` may use `cn()` with Tailwind — do not edit these files.
 
 #### shadcn/ui v2 (Base UI) Compatibility
 
-> **If using shadcn/ui v2: it uses `@base-ui/react` instead of Radix UI for some components.** The APIs differ between the two.
+> **If using shadcn/ui v2: it uses `@base-ui/react` instead of Radix UI for some components.**
 
 **Key differences:**
 1. **`asChild` does NOT exist on Base UI components** — use `render` prop instead
    - Base UI (Sheet, Dialog): `<SheetTrigger render={<Button />}>...</SheetTrigger>`
    - Radix (DropdownMenu, Select): `<DropdownMenuTrigger asChild><Button>...</Button></DropdownMenuTrigger>`
-2. **Check which primitive each component uses** before writing code:
-   - Base UI (`@base-ui/react`): Sheet, Dialog — use `render` prop
-   - Radix (`@radix-ui/react-*`): Select, DropdownMenu — use `asChild` prop
-3. **Base UI Select `onValueChange` passes `string | null`** — always handle null: `(v) => setState(String(v ?? ""))`
-4. **Button `size` variants** — only use values defined in the button component (check `components/ui/button.tsx`). Common: `"default"`, `"sm"`, `"lg"`, `"icon"`.
-5. **Badge `variant` values** — only use variants defined in the badge component. Common: `"default"`, `"secondary"`, `"destructive"`, `"outline"`.
-6. **Always verify the build compiles** after adding new pages or components: `npm run build`
+2. **Check which primitive each component uses** before writing code
+3. **Base UI Select `onValueChange` passes `string | null`** — always handle null
+4. **Only use variant/size values that actually exist** in the component definition — check `components/ui/` first
+5. **Always verify the build compiles** after adding new pages or components: `npm run build`
 
 #### Next.js App Router Rules
 
-1. **`useSearchParams()` must be wrapped in `<Suspense>`** — Next.js requires this for static generation. Split the page into a wrapper with Suspense and an inner content component.
-2. **Always pass type parameters to generic API calls** — `api.get<MyType>(url)` not `api.get(url)` to avoid `unknown` type errors.
-3. **Verify all shadcn/ui components are installed** before importing — run `npx shadcn@latest add <component>` if missing.
-4. **Install all npm dependencies** before building — `react-hook-form`, `@hookform/resolvers`, `zod`, `@tanstack/react-query`, etc.
+1. **`useSearchParams()` must be wrapped in `<Suspense>`**
+2. **Always pass type parameters to generic API calls** — `api.get<MyType>(url)` not `api.get(url)`
+3. **Verify all shadcn/ui components are installed** before importing
+4. **Install all npm dependencies** before building
 
 #### File Naming for CSS Modules
 
@@ -530,54 +741,56 @@ components/layout/
 ├── Sidebar.module.css
 ├── MobileNav.tsx
 ├── MobileNav.module.css
-├── Footer.tsx
-└── Footer.module.css
 ```
 
-- **Mobile-first CSS:** Always write mobile styles first, then add responsive breakpoints
-  - Default styles = mobile (320px+)
-  - `@media (min-width: 640px)` = tablet portrait
-  - `@media (min-width: 768px)` = tablet landscape
-  - `@media (min-width: 1024px)` = desktop
-  - `@media (min-width: 1280px)` = wide desktop
+#### Theme & Accessibility
+
 - **Theme:** Full light mode AND dark mode compliance
-  - Use CSS variables from shadcn theme system
+  - Use CSS variables from the design token system
   - Every component must render correctly in both themes
   - `next-themes` ThemeProvider wrapping the app with `system` / `light` / `dark` toggle
   - Test both themes before marking any UI task complete
-- **Touch-friendly:** All interactive elements must have minimum 44px touch targets
-- **Bottom navigation:** Mobile web uses bottom tab bar (like a native app), not top nav
-- **Accessibility:** WCAG 2.1 AA — proper aria labels, keyboard navigation, focus management
+- **Accessibility:** WCAG 2.1 AA — proper aria labels, keyboard navigation, focus management, color contrast ratios
 
 ### Mobile (React Native)
 
-> **All engineering standards apply equally to mobile.** TDD, SDD, no god files, 300-line limit, directory-based modules, dynamic testing, component-based architecture, CSS-in-files, contract-first, skill consultation — everything in this document applies to React Native code.
+> **All engineering standards apply equally to mobile.** TDD, SDD, no god files, 300-line limit, directory-based modules, dynamic testing, component-based architecture, contract-first — everything applies.
 
+- **Component-first:** Same zero-raw-markup rule as web. Every screen is composed of named, reusable components.
 - **Theme:** Light and dark mode using `useColorScheme()` + custom theme provider
 - **Responsive:** Handle different screen sizes with Dimensions API and flex layouts
-- **Platform-specific:** Use `Platform.select()` only when genuinely needed (iOS vs Android differences)
+- **Consistent branding:** Same design tokens (colors, spacing, typography) as web — adapted for React Native
 
 #### Component-Based Architecture (Mobile)
 
-Every screen is composed of reusable components. No monolithic screen files with all markup inline.
+Every screen is composed of reusable components. No monolithic screen files.
 
 ```
 src/
 ├── components/
 │   ├── layout/
 │   │   ├── TabBar.tsx
-│   │   ├── TabBar.styles.ts         # StyleSheet companion
+│   │   ├── TabBar.styles.ts
 │   │   ├── ScreenHeader.tsx
 │   │   └── ScreenHeader.styles.ts
-│   └── shared/
-│       ├── LoadingSpinner.tsx
-│       └── LoadingSpinner.styles.ts
+│   ├── shared/                    # Reusable across all features
+│   │   ├── StatCard.tsx
+│   │   ├── StatCard.styles.ts
+│   │   ├── EmptyState.tsx
+│   │   ├── EmptyState.styles.ts
+│   │   ├── LoadingSpinner.tsx
+│   │   ├── LoadingSpinner.styles.ts
+│   │   ├── Avatar.tsx
+│   │   └── Avatar.styles.ts
+│   └── brand/
+│       ├── Logo.tsx
+│       └── theme.ts               # Brand colors, spacing, typography constants
 ├── features/
 │   ├── {feature}/
-│   │   ├── components/
+│   │   ├── components/            # Feature-specific components
 │   │   │   ├── FeatureCard.tsx
 │   │   │   └── FeatureCard.styles.ts
-│   │   ├── screens/
+│   │   ├── screens/               # Screens compose components — no raw markup
 │   │   │   ├── FeatureScreen.tsx
 │   │   │   └── FeatureScreen.styles.ts
 │   │   ├── hooks/
@@ -587,43 +800,54 @@ src/
 
 #### No Inline Styles (Mobile)
 
-**All styles must live in companion `*.styles.ts` files using `StyleSheet.create()`. Never write inline `style={{}}` objects in JSX.**
+**All styles must live in companion `*.styles.ts` files using `StyleSheet.create()`. Never write inline `style={{}}` objects.**
 
-**Correct pattern:**
 ```typescript
-// components/layout/ScreenHeader.styles.ts
+// components/shared/StatCard.styles.ts
 import { StyleSheet } from "react-native";
+import { theme } from "@/components/brand/theme";
 
 export const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "var(--border)", // from theme
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
+  label: {
+    fontSize: 14,
+    color: theme.colors.mutedForeground,
+    fontFamily: theme.fonts.sans,
   },
-  actions: {
-    flexDirection: "row",
-    gap: 8,
-    marginLeft: "auto",
+  value: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: theme.colors.foreground,
+    fontFamily: theme.fonts.sans,
+    marginTop: theme.spacing.xs,
   },
 });
 ```
 ```tsx
-// components/layout/ScreenHeader.tsx
+// components/shared/StatCard.tsx
 import { View, Text } from "react-native";
-import { styles } from "./ScreenHeader.styles";
+import { styles } from "./StatCard.styles";
 
-export function ScreenHeader({ title, children }) {
+interface StatCardProps {
+  label: string;
+  value: string;
+  icon?: string;
+}
+
+export function StatCard({ label, value, icon }: StatCardProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.actions}>{children}</View>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{value}</Text>
     </View>
   );
 }
@@ -632,13 +856,12 @@ export function ScreenHeader({ title, children }) {
 **Forbidden:**
 ```tsx
 // NEVER — inline style objects
-<View style={{ flexDirection: "row", padding: 16, alignItems: "center" }}>
-  <Text style={{ fontSize: 18, fontWeight: "600" }}>{title}</Text>
-</View>
+<View style={{ flexDirection: "row", padding: 16 }}>
 
-// NEVER — styles defined at bottom of component file
-// (put them in a separate .styles.ts file)
-const styles = StyleSheet.create({...}); // at bottom of component file
+// NEVER — styles at bottom of component file
+const styles = StyleSheet.create({...}); // belongs in *.styles.ts
+
+// NEVER — raw View/Text blobs in screen files without component abstraction
 ```
 
 #### Dynamic Testing (Mobile)
@@ -646,7 +869,6 @@ const styles = StyleSheet.create({...}); // at bottom of component file
 - **Detox or Maestro** for e2e: real device/emulator interactions (tap, swipe, type, assert)
 - Tests follow user journey pattern — simulate what a real user does on each screen
 - Every screen and interaction must have corresponding e2e tests
-- Unit tests for hooks/services with real API mocks
 
 ```typescript
 // e2e/feature.test.ts (Detox example)
@@ -720,15 +942,19 @@ Before marking ANY task complete, verify:
 - [ ] No N+1 queries (use `select_related`/`prefetch_related`)
 - [ ] All endpoints have auth, authorization, validation, rate limiting
 - [ ] No hardcoded secrets
+- [ ] **Zero raw HTML** in page files — all UI is composed from named components
+- [ ] Reusable components exist in `components/shared/` — no duplicated UI patterns
+- [ ] All colors, spacing, radius, shadows use design tokens (CSS variables) — no hardcoded values
 - [ ] Web CSS Modules use standard CSS only — NO `@apply` (Tailwind v4 breaks)
 - [ ] Web: `npx tsc -b` passes with zero errors (primary type check for frontend)
 - [ ] Web: `npm run build` passes with zero errors (both frontend and admin)
 - [ ] Web: `useSearchParams()` wrapped in `<Suspense>` boundary
 - [ ] Web: shadcn component APIs match actual installed version (check `render` vs `asChild`, variant values)
 - [ ] Web UI works in light AND dark mode
-- [ ] Web UI is responsive (mobile, tablet, desktop)
+- [ ] Web UI is responsive at 320px, 768px, 1024px, 1440px — tested at all breakpoints
 - [ ] Mobile: styles in `*.styles.ts` files (no inline `style={{}}`)
-- [ ] Mobile: component-based (no monolithic screen files)
+- [ ] Mobile: component-based (no monolithic screen files, no raw View/Text blobs in screens)
+- [ ] Mobile: brand theme constants used for all colors, spacing, fonts
 - [ ] Mobile: e2e tests with Detox/Maestro following user journeys
 - [ ] Relevant skills were consulted before implementation
 - [ ] Security review completed on sensitive code (DAST scan for auth/payment endpoints)

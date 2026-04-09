@@ -11,26 +11,51 @@ You MUST read and follow ALL rules in `CLAUDE.md` before writing any code. That 
 - Code architecture rules (300-line limit, directory-based modules)
 - Database optimization standards
 - Security standards (auth, validation, rate limiting on every endpoint)
-- UI standards (CSS Modules, mobile-first, dark mode)
+- UI standards (component-based design, mobile-responsive, consistent branding)
 - Naming conventions (snake_case fields, UPPER_SNAKE_CASE enums, PascalCase components)
 - Git commit rules
 - Testing requirements (dynamic tests only, user journey patterns)
 - Code quality checklist
 
-## Key Files to Read
+## Quick Rules
 
-1. `CLAUDE.md` — Full engineering standards (START HERE)
-2. `handoff/SESSION_MEMORY.md` — Project state and decisions
-3. `docs/AGENT_COORDINATION.md` — Multi-agent coordination, contracts, enums
-4. `docs/contracts/_enums.contract.ts` — Enum definitions (single source of truth)
-5. `.ai/skills/` — Reference guides for security, testing, frontend, database work
+- **TDD**: Write tests first. Red → Green → Refactor. No feature is complete without tests.
+- **300-line limit**: No single file may exceed 300 lines. Split into directory-based modules.
+- **snake_case everywhere**: All field names, API responses, TypeScript types use snake_case.
+- **UPPER_SNAKE_CASE enums**: All enum values. Defined in `docs/contracts/_enums.contract.ts`.
+- **No inline styles**: Use CSS Modules (web) or StyleSheet companion files (mobile).
+- **No N+1 queries**: Always use select_related/prefetch_related.
+- **Security first**: Auth + authorization + validation + rate limiting on every endpoint.
+- **No hardcoded secrets**: All secrets from environment variables.
+- **No AI references in commits**: Never mention any AI tool name in commit messages.
+- **Contract-first**: Read `docs/contracts/{module}.contract.ts` before implementing any endpoint.
 
-## Non-Negotiable Rules
+## Frontend Rules (Non-Negotiable)
 
-- Write tests FIRST (TDD)
-- No file over 300 lines
-- No inline styles (CSS Modules on web, StyleSheet files on mobile)
-- No N+1 queries
-- No hardcoded secrets
-- All fields are `snake_case`, all enums are `UPPER_SNAKE_CASE`
-- No AI tool names in commit messages
+- **Zero raw HTML in pages**: Never write raw `<div>`, `<h1>`, `<p>` directly in page files. Every visible element must be a named, reusable component.
+- **Component-based always**: Build and reuse components from `components/shared/`. Check if one exists before creating a new one. Extend before recreating.
+- **Mobile-responsive mandatory**: Every page and component must work from 320px to 2560px. Design mobile-first, then enhance for larger screens. Test at 320px, 768px, 1024px, 1440px.
+- **Consistent branding**: All colors, spacing, border-radius, shadows, and fonts must come from design tokens (CSS variables / theme constants). Never hardcode visual values.
+- **Dark mode**: Every component must work in both light and dark themes.
+- **Page files only compose components**: Pages should read like a blueprint — `<PageShell>`, `<CardGrid>`, `<StatCard>` — not raw HTML structures.
+
+## Files to Read Before Implementation
+
+1. `CLAUDE.md` — Full engineering standards
+2. `handoff/SESSION_MEMORY.md` — Project state and architecture decisions
+3. `docs/AGENT_COORDINATION.md` — Contracts, enums, naming, migrations
+4. `docs/contracts/_enums.contract.ts` — Enum values (single source of truth)
+5. `.ai/skills/` — Reference guides for the domain you're working in
+
+## Architecture
+
+- **Backend**: Directory-based modules (models/, serializers/, views/, services/, tests/ per app)
+- **Frontend**: Feature-based organization (features/{name}/components, hooks, services, types). Shared components in `components/shared/`. Design tokens in `globals.css`.
+- **Mobile**: Feature-based with StyleSheet companion files (*.styles.ts). Brand theme in `components/brand/theme.ts`.
+- **Naming**: snake_case fields, PascalCase components, kebab-case URLs
+
+## Testing
+
+All tests must be dynamic — real HTTP requests (backend), real browser interactions (frontend).
+No import checks, no static assertions, no snapshot-only tests.
+Follow user journey patterns in every test file.
